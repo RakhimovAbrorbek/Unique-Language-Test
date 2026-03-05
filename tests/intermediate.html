@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Unique Academy — Intermediate</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #fff;
+      --text: #111;
+      --border: #e5e5e5;
+      --hover-border: #111;
+      --badge: #888;
+      --span: #aaa;
+      --footer: #ccc;
+      --passage-bg: #f9f9f9;
+      --question-text: #333;
+      --choice-bg: #fafafa;
+      --choice-border: #e5e5e5;
+      --choice-hover: #bbb;
+      --correct: #16a34a;
+      --correct-bg: #f0fdf4;
+      --wrong: #dc2626;
+      --wrong-bg: #fef2f2;
+      --result-border: #e5e5e5;
+      --score-num: #111;
+      --score-denom: #aaa;
+      --score-pct: #555;
+      --section-title: #111;
+      --section-border: #111;
+    }
+
+    .dark {
+      --bg: #111;
+      --text: #fff;
+      --border: #333;
+      --hover-border: #fff;
+      --badge: #aaa;
+      --span: #777;
+      --footer: #666;
+      --passage-bg: #222;
+      --question-text: #ccc;
+      --choice-bg: #333;
+      --choice-border: #555;
+      --choice-hover: #777;
+      --correct: #16a34a;
+      --correct-bg: #1a2e1f;
+      --wrong: #dc2626;
+      --wrong-bg: #2e1a1a;
+      --result-border: #333;
+      --score-num: #fff;
+      --score-denom: #aaa;
+      --score-pct: #ccc;
+      --section-title: #fff;
+      --section-border: #fff;
+    }
+
+    body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 48px 20px 80px; }
+    .wrap { width: 100%; max-width: 680px; display: flex; flex-direction: column; gap: 32px; }
+    nav { display: flex; justify-content: space-between; align-items: center; }
+    .brand { font-size: 0.9rem; font-weight: 600; color: var(--text); text-decoration: none; }
+    #statusBadge { font-size: 0.8rem; color: var(--badge); }
+    h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
+    .sub { font-size: 0.85rem; color: var(--badge); margin-top: 4px; }
+    .shield { display: flex; flex-direction: column; gap: 20px; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 0.8rem; font-weight: 500; color: #555; }
+    .field input { border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 0.95rem; color: var(--text); outline: none; transition: border-color 0.15s; width: 100%; background: var(--bg); }
+    .field input:focus { border-color: var(--hover-border); }
+    .btn { background: var(--text); color: var(--bg); border: none; border-radius: 8px; padding: 11px 20px; font-size: 0.9rem; font-weight: 600; cursor: pointer; align-self: flex-start; transition: opacity 0.15s; }
+    .btn:hover { opacity: 0.8; }
+    .btn:disabled { opacity: 0.4; cursor: default; background: #666; }
+    .err { font-size: 0.8rem; color: #e00; }
+    .hidden { display: none !important; }
+    #testArea { display: flex; flex-direction: column; gap: 24px; }
+    #passage { background: var(--passage-bg); border-radius: 10px; padding: 20px 24px; }
+    .passage-label { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--badge); margin-bottom: 10px; }
+    .passage-text { font-size: 0.95rem; line-height: 1.7; color: var(--question-text); }
+    .question { display: flex; flex-direction: column; gap: 10px; padding-bottom: 20px; border-bottom: 1px solid #f0f0f0; }
+    .question:last-child { border-bottom: none; }
+    .q-prompt { font-size: 0.95rem; line-height: 1.5; color: var(--text); }
+    .q-num { font-weight: 700; margin-right: 4px; }
+    .choices { display: flex; flex-direction: column; gap: 6px; }
+    .choice { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border: 1px solid var(--choice-border); border-radius: 8px; cursor: pointer; transition: border-color 0.12s, background 0.12s; font-size: 0.9rem; }
+    .choice:hover { border-color: var(--choice-hover); background: var(--choice-bg); }
+    .choice input[type=radio] { accent-color: var(--text); flex-shrink: 0; }
+    .choice-key { font-weight: 600; color: var(--badge); min-width: 16px; }
+    .choice.correct { border-color: var(--correct); background: var(--correct-bg); }
+    .choice.correct .choice-key { color: var(--correct); }
+    .choice.wrong { border-color: var(--wrong); background: var(--wrong-bg); }
+    .choice.wrong .choice-key { color: var(--wrong); }
+    #resultPanel { border: 1px solid var(--result-border); border-radius: 10px; padding: 24px; }
+    .score-row { display: flex; align-items: baseline; gap: 12px; margin-bottom: 6px; }
+    .score-num { font-size: 2.4rem; font-weight: 700; color: var(--score-num); }
+    .score-denom { font-size: 1.1rem; color: var(--score-denom); }
+    .score-pct { font-size: 1.1rem; font-weight: 600; color: var(--score-pct); }
+    .score-name { font-size: 0.85rem; color: var(--badge); }
+    .section-header { margin: 32px 0 20px 0; }
+    .section-header:first-child { margin-top: 0; }
+    .section-title { font-size: 1.1rem; font-weight: 700; color: var(--section-title); margin: 0; padding-bottom: 8px; border-bottom: 2px solid var(--section-border); }
+
+    #themeToggle {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--text);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <nav>
+      <a class="brand" href="../index.html">Unique Academy</a>
+      <span id="statusBadge"></span>
+    </nav>
+    <div>
+      <h1>Intermediate <span style="color:#aaa;font-weight:400">B1+/B2</span></h1>
+      <p class="sub">30 questions — Grammar, Vocabulary, Reading</p>
+    </div>
+    <div id="shield" class="shield">
+      <form id="passwordForm" style="display:flex;flex-direction:column;gap:12px">
+        <div class="field">
+          <label for="passwordInput">Access Code</label>
+          <input id="passwordInput" type="text" autocomplete="off" placeholder="Enter access code" required />
+        </div>
+        <p id="passwordFeedback" class="err hidden">Incorrect password.</p>
+        <button class="btn" type="submit">Continue</button>
+      </form>
+      <form id="nameForm" class="hidden" style="display:flex;flex-direction:column;gap:12px">
+        <div class="field">
+          <label for="fullName">Your full name</label>
+          <input id="fullName" type="text" autocomplete="name" placeholder="e.g. John Smith" required />
+        </div>
+        <button class="btn" type="submit">Start test</button>
+      </form>
+    </div>
+    <div id="testArea" class="hidden">
+      <div id="passage"></div>
+      <div id="questions"></div>
+      <button class="btn" id="submitTest">Submit answers</button>
+      <div id="resultPanel" class="hidden"></div>
+    </div>
+  </div>
+  <script src="./test-core.js" data-level-key="intermediate" data-level-label="Intermediate" data-txt-path="../txt/intermediate.txt"></script>
+</body>
+</html>
