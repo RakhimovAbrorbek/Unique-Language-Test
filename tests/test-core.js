@@ -6,6 +6,17 @@
   const PASSWORD = 'Abrorbek';
   const storageKey = 'ua_session';
 
+  // Phone-friendly tweaks, injected once so every test inherits them.
+  const comfortStyle = document.createElement('style');
+  comfortStyle.textContent = `
+    body { padding-bottom: 140px !important; }
+    .choice { padding: 13px 14px; min-height: 48px; }
+    .choice input[type=radio] { width: 20px; height: 20px; }
+    #submitTest { align-self: stretch; width: 100%; padding: 14px; font-size: 1rem; }
+    @media (max-width: 600px) { .choice { font-size: 1rem; } }
+  `;
+  document.head.appendChild(comfortStyle);
+
   const shield = document.getElementById('shield');
   const passwordForm = document.getElementById('passwordForm');
   const passwordInput = document.getElementById('passwordInput');
@@ -95,20 +106,29 @@
     const total = Object.keys(answerKey).length;
     let indicators = '';
     for (let i = 1; i <= total; i++) {
-      const color = answers[i] ? '#16a34a' : '#fff';
-      indicators += `<span style="display:inline-block;width:24px;height:24px;margin:2px;border:1px solid #ccc;text-align:center;line-height:24px;font-size:0.8rem;background:${color};cursor:pointer;" onclick="scrollToQuestion(${i})">${i}</span>`;
+      const answered = !!answers[i];
+      const bg = answered ? '#16a34a' : 'var(--bg)';
+      const fg = answered ? '#fff' : 'var(--text)';
+      indicators += `<span data-qjump="${i}" style="display:inline-block;width:30px;height:30px;margin:3px;border:1px solid var(--border);border-radius:6px;text-align:center;line-height:30px;font-size:0.8rem;background:${bg};color:${fg};cursor:pointer;">${i}</span>`;
     }
     const indicatorsEl = document.getElementById('questionIndicators');
     if (indicatorsEl) {
-      indicatorsEl.innerHTML = '<p style="font-size:0.9rem;margin-bottom:8px;"></p><div>' + indicators + '</div>';
+      indicatorsEl.innerHTML = '<div>' + indicators + '</div>';
     }
   }
 
   function scrollToQuestion(num) {
     const questionEl = document.querySelector(`[data-qnum="${num}"]`);
     if (questionEl) {
-      questionEl.scrollIntoView({ behavior: 'smooth' });
+      questionEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
+  }
+
+  function scrollToNext(currentNum) {
+    const nextNum = Number(currentNum) + 1;
+    if (answers[nextNum]) return; // next is already answered — likely reviewing, so don't jump
+    const next = document.querySelector(`[data-qnum="${nextNum}"]`);
+    if (next) setTimeout(() => next.scrollIntoView({ behavior: 'smooth', block: 'center' }), 200);
   }
     
   function renderQuestions() {
@@ -124,12 +144,18 @@
       indicatorsDiv.style.bottom = '20px';
       indicatorsDiv.style.left = '20px';
       indicatorsDiv.style.right = '20px';
-      indicatorsDiv.style.background = 'rgba(255, 255, 255, 0.95)';
+      indicatorsDiv.style.background = 'var(--bg)';
+      indicatorsDiv.style.borderTop = '1px solid var(--border)';
       indicatorsDiv.style.padding = '10px';
-      indicatorsDiv.style.borderRadius = '8px';
       indicatorsDiv.style.boxShadow = '0 -2px 10px rgba(0, 0, 0, 0.1)';
       indicatorsDiv.style.zIndex = '100';
       indicatorsDiv.style.textAlign = 'center';
+      indicatorsDiv.style.maxHeight = '40vh';
+      indicatorsDiv.style.overflowY = 'auto';
+      indicatorsDiv.addEventListener('click', (e) => {
+        const sq = e.target.closest('[data-qjump]');
+        if (sq) scrollToQuestion(sq.dataset.qjump);
+      });
       testArea.appendChild(indicatorsDiv);
     }
     
@@ -168,6 +194,7 @@
           persistDraft();
           updateSubmitButton();
           renderIndicators();
+          scrollToNext(q.number);
         });
         choicesDiv.appendChild(lbl);
       });
@@ -252,70 +279,6 @@
     `;
   }
 
-  function showPasswordModal() {
-    // Create modal overlay
-    const modal = document.createElement('div');
-    modal.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    `;
-    
-    // Create modal content
-    const modalContent = document.createElement('div');
-    modalContent.style.cssText = `
-      background: white;
-      border-radius: 12px;
-      padding: 32px;
-      max-width: 400px;
-      width: 90%;
-      text-align: center;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-    `;
-    
-    modalContent.innerHTML = `
-      <h2 style="margin: 0 0 16px 0; font-size: 1.5rem; font-weight: 700; color: #111;">Confirm Submission</h2>
-      <p style="margin: 0 0 24px 0; color: #666; font-size: 0.9rem;">Enter the password to submit your test results.</p>
-      <form id="confirmPasswordForm" style="display:flex;flex-direction:column;gap:12px">
-        <input id="confirmPasswordInput" type="text" placeholder="Enter password" required style="border: 1px solid #e0e0e0; border-radius: 8px; padding: 10px 14px; font-size: 0.95rem; color: #111; outline: none;" />
-        <p id="confirmPasswordFeedback" class="err hidden" style="font-size: 0.8rem; color: #e00;">Incorrect password.</p>
-        <button type="submit" style="background: #111; color: #fff; border: none; border-radius: 8px; padding: 11px 20px; font-size: 0.9rem; font-weight: 600; cursor: pointer;">Submit Results</button>
-        <button type="button" id="cancelConfirm" style="background: #f0f0f0; color: #666; border: none; border-radius: 8px; padding: 11px 20px; font-size: 0.9rem; font-weight: 600; cursor: pointer;">Cancel</button>
-      </form>
-    `;
-    
-    modal.appendChild(modalContent);
-    document.body.appendChild(modal);
-    
-    const confirmPasswordForm = document.getElementById('confirmPasswordForm');
-    const confirmPasswordInput = document.getElementById('confirmPasswordInput');
-    const confirmPasswordFeedback = document.getElementById('confirmPasswordFeedback');
-    const cancelBtn = document.getElementById('cancelConfirm');
-    
-    confirmPasswordForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      if (confirmPasswordInput.value.trim() === PASSWORD) {
-        document.body.removeChild(modal);
-        submitted = true;
-        submitBtn.disabled = true;
-        submitResults();
-      } else {
-        confirmPasswordFeedback.classList.remove('hidden');
-      }
-    });
-    
-    cancelBtn.addEventListener('click', () => {
-      document.body.removeChild(modal);
-    });
-  }
-
   passwordForm.addEventListener('submit', (e) => {
     e.preventDefault();
     if (passwordInput.value.trim() === PASSWORD) {
@@ -340,25 +303,19 @@
     if (!loaded) loadTest();
   });
 
-  function checkAllQuestionsAnswered() {
-    const totalQuestions = Object.keys(answerKey).length;
-    const answeredQuestions = Object.keys(answers).length;
-    return answeredQuestions === totalQuestions;
-  }
-
   function updateSubmitButton() {
     if (!loaded || submitted) return;
-    const allAnswered = checkAllQuestionsAnswered();
-    submitBtn.disabled = !allAnswered;
-    submitBtn.textContent = allAnswered ? 'Submit answers' : `Answer all questions (${Object.keys(answers).length}/${Object.keys(answerKey).length})`;
+    const total = Object.keys(answerKey).length;
+    const answered = Object.keys(answers).length;
+    submitBtn.disabled = false;
+    submitBtn.textContent = `Submit answers (${answered}/${total} answered)`;
   }
 
   submitBtn.addEventListener('click', () => {
     if (!loaded || submitted) return;
-    if (!checkAllQuestionsAnswered()) {
-      return;
-    }
-    showPasswordModal();
+    submitted = true;
+    submitBtn.disabled = true;
+    submitResults();
   });
 
   if (existing.name) {
